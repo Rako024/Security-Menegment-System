@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Electronics Management System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
+        }
+
+        h2 {
+            color: #007bff;
+        }
+
+        #categoryFilter {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #categoryFilter:hover {
+            background-color: #0056b3;
+        }
+
+        #categorySelect {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+
+        #itemList {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .item {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            margin: 10px 0;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .item button {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 14px;
+        }
+
+        .item button.edit-btn {
+            background-color: #28a745;
+        }
+
+        form {
+            margin-top: 20px;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input, select, button {
+            margin-bottom: 15px;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h2>Online Electronics Management System</h2>
+
+    <button id="categoryFilter" onclick="showAllItems()">Show All Items</button>
+
+    <select id="categorySelect" onchange="filterByCategory()">
+        <option value="all">All Categories</option>
+        <option value="computers">Computers</option>
+        <option value="switches">Switches</option>
+        <option value="faceRecognitionDevices">Face Recognition Devices</option>
+        <option value="fingerprintDevices">Fingerprint Devices</option>
+        <option value="printers">Printers</option>
+        <option value="wirelessDevices">Wireless Devices</option>
+        <option value="securityCameras">Security Cameras</option> <!-- New category -->
+    </select>
+
+    <ul id="itemList"></ul>
+
+    <form id="addItemForm">
+        <label for="itemName">Item Name:</label>
+        <input type="text" id="itemName" required>
+
+        <label for="itemQuantity">Quantity:</label>
+        <input type="number" id="itemQuantity" required>
+
+        <label for="itemCategory">Category:</label>
+        <select id="itemCategory" required>
+            <option value="computers">Computers</option>
+            <option value="switches">Switches</option>
+            <option value="faceRecognitionDevices">Face Recognition Devices</option>
+            <option value="fingerprintDevices">Fingerprint Devices</option>
+            <option value="printers">Printers</option>
+            <option value="wirelessDevices">Wireless Devices</option>
+            <option value="securityCameras">Security Cameras</option> <!-- New category -->
+        </select>
+
+        <label for="itemSerial">Serial Number:</label>
+        <input type="text" id="itemSerial" required>
+
+        <button type="button" onclick="addItem()">Add Item</button>
+    </form>
+
+    <form id="editItemForm" style="display: none;">
+        <input type="hidden" id="editItemId">
+
+        <label for="editItemName">Item Name:</label>
+        <input type="text" id="editItemName" required>
+
+        <label for="editItemQuantity">Quantity:</label>
+        <input type="number" id="editItemQuantity" required>
+
+        <label for="editItemCategory">Category:</label>
+        <select id="editItemCategory" required>
+            <option value="computers">Computers</option>
+            <option value="switches">Switches</option>
+            <option value="faceRecognitionDevices">Face Recognition Devices</option>
+            <option value="fingerprintDevices">Fingerprint Devices</option>
+            <option value="printers">Printers</option>
+            <option value="wirelessDevices">Wireless Devices</option>
+            <option value="securityCameras">Security Cameras</option> <!-- New category -->
+        </select>
+
+        <label for="editItemSerial">Serial Number:</label>
+        <input type="text" id="editItemSerial" required>
+
+        <button type="button" onclick="updateItem()">Update Item</button>
+        <button type="button" onclick="cancelEdit()">Cancel</button>
+    </form>
+
+    <script>
+        const sampleItems = JSON.parse(localStorage.getItem('sampleItems')) || [
+            { name: 'Laptop', quantity: 10, category: 'computers', serial: 'ABC123' },
+            { name: 'Printer', quantity: 5, category: 'printers', serial: 'XYZ789' },
+            { name: 'Security Camera', quantity: 3, category: 'securityCameras', serial: 'DEF456' }, // New item
+        ];
+
+        function showAllItems() {
+            document.getElementById('categorySelect').value = 'all';
+            displayItems();
+        }
+
+        function filterByCategory() {
+            const selectedCategory = document.getElementById('categorySelect').value;
+            if (selectedCategory === 'all') {
+                displayItems();
+            } else {
+                const filteredItems = sampleItems.filter(item => item.category === selectedCategory);
+                displayFilteredItems(filteredItems);
+            }
+        }
+
+        function displayFilteredItems(items) {
+            const itemList = document.getElementById('itemList');
+            itemList.innerHTML = '';
+
+            items.forEach(item => {
+                const listItem = document.createElement('li');
+                listItem.className = 'item';
+                listItem.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong>
+                        <br>Quantity: ${item.quantity}
+                        <br>Category: ${item.category}
+                        <br>Serial Number: ${item.serial}
+                    </div>
+                    <button class="edit-btn" onclick="editItem('${item.name}')">Edit</button>
+                    <button onclick="deleteItem('${item.name}')">Delete</button>
+                `;
+                itemList.appendChild(listItem);
+            });
+        }
+
+        function addItem() {
+            const itemName = document.getElementById('itemName').value;
+            const itemQuantity = document.getElementById('itemQuantity').value;
+            const itemCategory = document.getElementById('itemCategory').value;
+            const itemSerial = document.getElementById('itemSerial').value;
+
+            if (!itemName || !itemQuantity || !itemCategory || !itemSerial) {
+                alert('Please fill in all fields.');
+                return;
+            }
+
+            sampleItems.push({
+                name: itemName,
+                quantity: itemQuantity,
+                category: itemCategory,
+                serial: itemSerial,
+            });
+
+            displayItems();
+        }
+
+        function deleteItem(itemName) {
+            const index = sampleItems.findIndex(item => item.name === itemName);
+            if (index !== -1) {
+                sampleItems.splice(index, 1);
+                displayItems();
+            }
+        }
+
+        function editItem(itemName) {
+            const item = sampleItems.find(item => item.name === itemName);
+            if (item) {
+                document.getElementById('addItemForm').style.display = 'none';
+                document.getElementById('editItemForm').style.display = 'block';
+
+                document.getElementById('editItemId').value = itemName;
+                document.getElementById('editItemName').value = item.name;
+                document.getElementById('editItemQuantity').value = item.quantity;
+                document.getElementById('editItemCategory').value = item.category;
+                document.getElementById('editItemSerial').value = item.serial;
+            }
+        }
+
+        function updateItem() {
+            const editItemId = document.getElementById('editItemId').value;
+            const editItemName = document.getElementById('editItemName').value;
+            const editItemQuantity = document.getElementById('editItemQuantity').value;
+            const editItemCategory = document.getElementById('editItemCategory').value;
+            const editItemSerial = document.getElementById('editItemSerial').value;
+
+            if (!editItemName || !editItemQuantity || !editItemCategory || !editItemSerial) {
+                alert('Please fill in all fields.');
+                return;
+            }
+
+            const index = sampleItems.findIndex(item => item.name === editItemId);
+            if (index !== -1) {
+                sampleItems[index] = {
+                    name: editItemName,
+                    quantity: editItemQuantity,
+                    category: editItemCategory,
+                    serial: editItemSerial,
+                };
+                displayItems();
+                cancelEdit();
+            }
+        }
+
+        function cancelEdit() {
+            document.getElementById('editItemId').value = '';
+            document.getElementById('editItemForm').style.display = 'none';
+            document.getElementById('addItemForm').style.display = 'block';
+        }
+
+        function displayItems() {
+            const itemList = document.getElementById('itemList');
+            itemList.innerHTML = '';
+
+            sampleItems.forEach(item => {
+                const listItem = document.createElement('li');
+                listItem.className = 'item';
+                listItem.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong>
+                        <br>Quantity: ${item.quantity}
+                        <br>Category: ${item.category}
+                        <br>Serial Number: ${item.serial}
+                    </div>
+                    <button class="edit-btn" onclick="editItem('${item.name}')">Edit</button>
+                    <button onclick="deleteItem('${item.name}')">Delete</button>
+                `;
+                itemList.appendChild(listItem);
+            });
+
+            // Yaddaşda saxlamaq
+            localStorage.setItem('sampleItems', JSON.stringify(sampleItems));
+        }
+
+        displayItems();
+    </script>
+</body>
+</html>
